@@ -2441,6 +2441,15 @@ struct ImGuiContextHook
     ImGuiContextHook()          { memset(this, 0, sizeof(*this)); }
 };
 
+// [Draxor] Render hooks: let the application draw a few widgets itself while Dear ImGui keeps all of their behaviour.
+// - Tab items: called by TabItemEx() in place of TabItemBackground() and the selected-tab overline, for tab bar and
+//   docking tabs alike. Return true when the hook drew the tab. Optionally write the label colour to *out_text_col
+//   (0 = keep ImGuiCol_Text); the label, ellipsis, unsaved marker and close button are still handled by ImGui.
+// - Windows: called by Begin() after the window background, title bar, borders and scrollbars are rendered and before
+//   any content, for every window that is visible this frame. Draw into window->DrawList.
+typedef bool (*ImGuiTabItemRenderHook)(ImDrawList* draw_list, const ImRect& bb, ImGuiTabItemFlags flags, ImGuiID tab_id, const char* label, bool selected, bool hovered, bool held, bool tab_bar_focused, ImU32* out_text_col);
+typedef void (*ImGuiWindowDecorationHook)(ImGuiWindow* window, bool title_bar_is_highlight);
+
 //-----------------------------------------------------------------------------
 // [SECTION] ImGuiContext (main Dear ImGui context)
 //-----------------------------------------------------------------------------
@@ -2774,6 +2783,8 @@ struct ImGuiContext
     ImChunkStream<ImGuiTableSettings>   SettingsTables;         // ImGuiTable .ini settings entries
     ImVector<ImGuiContextHook>          Hooks;                  // Hooks for extensions (e.g. test engine)
     ImGuiID                             HookIdNext;             // Next available HookId
+    ImGuiTabItemRenderHook              TabItemRenderHook;      // [Draxor] Optional custom tab item rendering (see ImGuiTabItemRenderHook)
+    ImGuiWindowDecorationHook           WindowDecorationHook;   // [Draxor] Optional custom window decoration (see ImGuiWindowDecorationHook)
 
     // Localization
     const char*             LocalizationTable[ImGuiLocKey_COUNT];

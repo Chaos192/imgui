@@ -4379,6 +4379,8 @@ ImGuiContext::ImGuiContext(ImFontAtlas* shared_font_atlas)
     SettingsLoaded = false;
     SettingsDirtyTimer = 0.0f;
     HookIdNext = 0;
+    TabItemRenderHook = NULL;
+    WindowDecorationHook = NULL;
 
     memset(LocalizationTable, 0, sizeof(LocalizationTable));
 
@@ -8437,6 +8439,10 @@ bool ImGui::Begin(const char* name, bool* p_open, ImGuiWindowFlags flags)
 
             if (render_decorations_in_parent)
                 window->DrawList = &window->DrawListInst;
+
+            // [Draxor] Application-drawn decorations, under the window content
+            if (g.WindowDecorationHook)
+                g.WindowDecorationHook(window, title_bar_is_highlight);
         }
 
         // UPDATE RECTANGLES (2- THOSE AFFECTED BY SCROLLING)

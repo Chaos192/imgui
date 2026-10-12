@@ -10704,8 +10704,11 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
     {
         ImDrawList* display_draw_list = window->DrawList;
         const ImU32 tab_col = GetColorU32((held || hovered) ? ImGuiCol_TabHovered : tab_contents_visible ? (tab_bar_focused ? ImGuiCol_TabSelected : ImGuiCol_TabDimmedSelected) : (tab_bar_focused ? ImGuiCol_Tab : ImGuiCol_TabDimmed));
-        TabItemBackground(display_draw_list, bb, flags, tab_col);
-        if (tab_contents_visible && (tab_bar->Flags & ImGuiTabBarFlags_DrawSelectedOverline) && style.TabBarOverlineSize > 0.0f)
+        ImU32 hook_text_col = 0;
+        const bool drawn_by_hook = g.TabItemRenderHook != NULL && g.TabItemRenderHook(display_draw_list, bb, flags, id, label, tab_contents_visible, hovered, held, tab_bar_focused, &hook_text_col); // [Draxor]
+        if (!drawn_by_hook)
+            TabItemBackground(display_draw_list, bb, flags, tab_col);
+        if (!drawn_by_hook && tab_contents_visible && (tab_bar->Flags & ImGuiTabBarFlags_DrawSelectedOverline) && style.TabBarOverlineSize > 0.0f)
         {
             // Might be moved to TabItemBackground() ?
             ImVec2 tl = bb.GetTL() + ImVec2(0, 1.0f * g.CurrentDpiScale);
@@ -10737,7 +10740,11 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
         const ImGuiID close_button_id = p_open ? GetIDWithSeed("#CLOSE", NULL, docked_window ? docked_window->ID : id) : 0;
         bool just_closed;
         bool text_clipped;
+        if (hook_text_col != 0)
+            PushStyleColor(ImGuiCol_Text, hook_text_col); // [Draxor]
         TabItemLabelAndCloseButton(display_draw_list, bb, tab_just_unsaved ? (flags & ~ImGuiTabItemFlags_UnsavedDocument) : flags, tab_bar->FramePadding, label, id, close_button_id, tab_contents_visible, &just_closed, &text_clipped);
+        if (hook_text_col != 0)
+            PopStyleColor();
         if (just_closed && p_open != NULL)
         {
             *p_open = false;
